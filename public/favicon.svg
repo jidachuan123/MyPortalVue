@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="portalBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f2d3d"/>
+      <stop offset="55%" stop-color="#283e5a"/>
+      <stop offset="100%" stop-color="#409EFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#portalBg)"/>
+  <!-- 拱门（门户入口） -->
+  <path d="M19 51 V33 A13 13 0 0 1 45 33 V51 Z" fill="#ffffff"/>
+  <!-- 门缝 -->
+  <line x1="32" y1="33" x2="32" y2="51" stroke="#409EFF" stroke-width="2" stroke-linecap="round"/>
+  <!-- 门把手 -->
+  <circle cx="39.5" cy="42" r="2.2" fill="#409EFF"/>
+</svg>
