@@ -1,376 +1,420 @@
 <template>
-  <div class="page-container portal-page">
-    <!-- 顶栏 -->
-    <header class="portal-header">
-      <div class="header-left">
-        <div class="logo">◆</div>
-        <span class="app-name">企业门户系统</span>
-        <el-tag size="small" type="primary" effect="dark" class="sso-tag">SSO 单点登录</el-tag>
-      </div>
-      <div class="header-right">
-        <el-avatar :size="34" class="user-avatar">{{ avatarText }}</el-avatar>
-        <span class="user-name">{{ userStore.realName || userStore.username }}</span>
-        <el-dropdown @command="handleCommand">
-          <el-button size="small" text>更多操作</el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">
-                <el-icon><SwitchButton /></el-icon>退出登录
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+  <div class="jh-portal">
+    <!-- ======= 顶部导航 ======= -->
+    <header class="jh-nav">
+      <div class="jh-nav-inner">
+        <a class="jh-brand" href="#" @click.prevent="scrollTo('top')">佳和商业</a>
+        <nav class="jh-nav-links">
+          <a href="#" @click.prevent="scrollTo('top')">首页</a>
+          <a href="#" @click.prevent="scrollTo('about')">关于我们</a>
+          <a class="jh-btn jh-btn-primary" href="#" @click.prevent="scrollTo('contact')">联系我们</a>
+        </nav>
       </div>
     </header>
 
-    <!-- 欢迎区 -->
-    <div class="welcome-banner">
-      <div>
-        <h2>你好，{{ userStore.realName || userStore.username }} 👋</h2>
-        <p>已通过统一身份认证，点击下方卡片即可免登录进入各业务子系统。</p>
-      </div>
-      <div class="role-tags">
-        <el-tag v-for="r in roles" :key="r" type="success" effect="light" class="role-tag">
-          {{ roleName(r) }}
-        </el-tag>
-      </div>
-    </div>
+    <!-- ======= Hero：标题 + 两个系统入口卡片 ======= -->
+    <section id="top" class="jh-hero">
+      <div class="jh-hero-overlay"></div>
+      <div class="jh-hero-content">
+        <h1>佳和商业供应链门户</h1>
+        <p class="jh-hero-sub">一站式供应链系统访问平台</p>
 
-    <!-- 子系统卡片区 -->
-    <div class="subsystem-title">
-      <h3>业务子系统</h3>
-      <span>单点登录 · 一次认证，随处通行</span>
-    </div>
-
-    <div v-loading="loading" class="subsystem-grid">
-      <div
-        v-for="(sub, i) in subsystems"
-        :key="sub.code"
-        class="subsystem-card"
-        :style="{ '--card-color': sub.color }"
-        @click="enterSubsystem(sub)"
-      >
-        <div class="card-icon">
-          <el-icon :size="40"><component :is="sub.icon" /></el-icon>
+        <div class="jh-sys-cards">
+          <div v-for="sys in systems" :key="sys.name" class="jh-sys-card">
+            <div class="jh-sys-icon">
+              <el-icon :size="30"><component :is="sys.icon" /></el-icon>
+            </div>
+            <h3>{{ sys.name }}</h3>
+            <p>{{ sys.desc }}</p>
+            <a class="jh-btn jh-btn-primary" :href="sys.url">
+              立即登录
+            </a>
+          </div>
         </div>
-        <div class="card-name">{{ sub.name }}</div>
-        <div class="card-desc">{{ sub.desc }}</div>
-        <div class="card-footer">
-          <el-button type="primary" size="small" text>
-            进入系统 <el-icon><Right /></el-icon>
-          </el-button>
-        </div>
-        <span class="card-badge">#{{ sub.code }}</span>
       </div>
-    </div>
+    </section>
 
-    <!-- SSO 流程说明 -->
-    <el-card class="sso-flow-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <el-icon><InfoFilled /></el-icon>
-          <span>SSO 单点登录流程（子系统A已真实对接）</span>
+    <!-- ======= 关于区块 ======= -->
+    <section id="about" class="jh-about">
+      <h2>关于佳和商业</h2>
+      <p class="jh-about-text">
+        佳和商业是一家专注于供应链管理的现代化企业，致力于为经销商提供高效、便捷的供应链服务。
+        我们整合优质资源，搭建数字化供应链平台，帮助合作伙伴实现商品信息查询、订单管理、
+        物流跟踪等核心业务需求。多年来，我们始终坚持专业、可靠的服务理念，赢得了广大经销商的信任与支持。
+      </p>
+
+      <div class="jh-feature-grid">
+        <div v-for="f in features" :key="f.title" class="jh-feature-card">
+          <div class="jh-sys-icon">
+            <el-icon :size="26"><component :is="f.icon" /></el-icon>
+          </div>
+          <h4>{{ f.title }}</h4>
+          <p>{{ f.desc }}</p>
         </div>
-      </template>
-      <el-steps :active="4" align-center finish-status="success" class="sso-steps">
-        <el-step title="门户登录" description="输入账号密码，获取 JWT" />
-        <el-step title="生成票据" description="后端签发 SSO Ticket（带 targetApp）" />
-        <el-step title="跳转子系统" description="window.location.href 携带 Ticket 真实跳转" />
-        <el-step title="子系统验签" description="子系统用共享密钥本地验签，免登录进入" />
-      </el-steps>
-    </el-card>
+      </div>
+    </section>
 
-    <!-- 登录信息 -->
-    <el-descriptions :column="3" border size="small" class="user-info-card" title="当前登录信息">
-      <el-descriptions-item label="用户ID">{{ userInfo?.userId }}</el-descriptions-item>
-      <el-descriptions-item label="用户名">{{ userInfo?.username }}</el-descriptions-item>
-      <el-descriptions-item label="真实姓名">{{ userInfo?.realName }}</el-descriptions-item>
-    </el-descriptions>
+    <!-- ======= 页脚 ======= -->
+    <footer id="contact" class="jh-footer">
+      <div class="jh-footer-inner">
+        <div class="jh-footer-col">
+          <h5>联系方式</h5>
+          <p>电话：400-898-8888</p>
+          <p>邮箱：service@jiahehangye.com</p>
+          <p>地址：浙江省杭州市西湖区文三路 100 号</p>
+        </div>
+        <div class="jh-footer-col">
+          <h5>快速导航</h5>
+          <a href="#" @click.prevent="scrollTo('top')">首页</a>
+          <a href="#" @click.prevent="scrollTo('about')">关于我们</a>
+        </div>
+        <div class="jh-footer-col">
+          <h5>供应链系统</h5>
+          <a v-for="sys in systems" :key="sys.name" :href="sys.url">{{ sys.name }}</a>
+        </div>
+      </div>
+      <div class="jh-footer-bottom">
+        <p>© 2026 佳和商业. 保留所有权利.</p>
+        <p>浙 ICP 备 12345678 号</p>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Right, SwitchButton, InfoFilled } from '@element-plus/icons-vue'
-import { useUserStore } from '../stores/user'
-import { getSubsystems, createSsoTicket } from '../api/portal'
+import { ShoppingCart, Box, Van, CircleCheck, Setting } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-
-const loading = ref(false)
-const subsystems = ref([])
-const userInfo = computed(() => userStore.userInfo)
-const roles = computed(() => userStore.userInfo?.roles || [])
-const avatarText = computed(() => (userStore.realName || userStore.username || 'U').slice(0, 1).toUpperCase())
-
-const ROLE_NAMES = {
-  admin: '管理员',
-  operator: '操作员',
-  viewer: '只读用户'
-}
-
-function roleName(code) {
-  return ROLE_NAMES[code] || code
-}
-
-onMounted(async () => {
-  try {
-    if (!userStore.userInfo) {
-      await userStore.fetchMe()
-    }
-    const res = await getSubsystems()
-    subsystems.value = res.result
-  } catch (e) {
-    // 已由拦截器处理
+// 两个供应商系统入口：点击「立即登录」直接跳转对应系统
+const systems = [
+  {
+    name: '佳和超市供应商系统',
+    desc: '查看超市商品信息、订单状态、库存数据',
+    url: 'http://192.168.0.54:9006/#/',
+    icon: ShoppingCart
+  },
+  {
+    name: '佳和资材供应商系统',
+    desc: '查看资材商品信息、采购订单、物流跟踪',
+    url: 'http://192.168.0.61:7022/#/',
+    icon: Box
   }
-})
+]
 
-async function enterSubsystem(sub) {
-  loading.value = true
-  try {
-    // 1. 生成一次性 SSO 票据（指定目标子系统编码，ticket 带 targetApp 防跨系统冒用）
-    const res = await createSsoTicket(sub.code)
-    const { ticket, mode, redirectUrl, path } = res.result
-
-    ElMessage.success(`正在通过 SSO 免登录进入 ${sub.name}...`)
-
-    // 2. 跳转子系统
-    setTimeout(() => {
-      if (mode === 'redirect' && redirectUrl) {
-        // 真实子系统：浏览器真实跳转（跳出本站，由子系统自行验证 ticket 建立会话）
-        window.location.href = redirectUrl
-      } else {
-        // 模拟子系统：本站内前端路由跳转
-        router.push({ path, query: { ticket } })
-      }
-    }, 600)
-  } catch (e) {
-    // 已由拦截器处理
-  } finally {
-    loading.value = false
+const features = [
+  {
+    title: '高效供应链',
+    desc: '整合优质资源，提供快速响应的供应链服务，确保商品流通高效顺畅',
+    icon: Van
+  },
+  {
+    title: '品质保障',
+    desc: '严格的质量管控体系，确保每一件商品的品质，让经销商放心合作',
+    icon: CircleCheck
+  },
+  {
+    title: '专业服务',
+    desc: '专业的服务团队，提供全方位的技术支持和业务咨询，助力经销商成功',
+    icon: Setting
   }
-}
+]
 
-async function handleCommand(cmd) {
-  if (cmd === 'logout') {
-    await ElMessageBox.confirm('确定退出登录吗？', '提示', { type: 'warning' })
-    await userStore.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
+function scrollTo(id) {
+  if (id === 'top') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
   }
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 }
 </script>
 
 <style scoped>
-.portal-page {
-  max-width: 1200px;
+/* ====== 主题色（对齐参考稿：Tailwind blue 系） ======
+   主色   #1e40af   hover #2563eb   遮罩 rgba(30,58,138,.7)
+   图标底 #dbeafe   正文灰 #4b5563   浅灰背景 #f9fafb        */
+
+.jh-portal {
+  min-height: 100vh;
+  background: #fff;
+  color: #111827;
+}
+
+/* ====== 顶部导航 ====== */
+.jh-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.jh-nav-inner {
+  max-width: 1152px;
   margin: 0 auto;
-}
-
-.portal-header {
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 0;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 24px;
 }
 
-.header-left {
+.jh-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.jh-nav-links {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 26px;
 }
 
-.logo {
-  width: 36px;
-  height: 36px;
+.jh-nav-links a {
+  font-size: 15px;
+  color: #374151;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.jh-nav-links a:hover {
+  color: #1e40af;
+}
+
+/* ====== 按钮 ====== */
+.jh-btn {
+  display: inline-block;
+  padding: 10px 24px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #409EFF, #36cfc9);
+  font-size: 15px;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.jh-btn-primary {
+  background: #1e40af;
   color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
 }
 
-.app-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2d3d;
-}
-
-.sso-tag {
-  margin-left: 4px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-avatar {
-  background: #409EFF;
+/* 覆盖 .jh-nav-links a 的灰色文字（后者优先级更高，需显式压回） */
+.jh-nav-links a.jh-btn-primary {
   color: #fff;
-  font-weight: 600;
 }
 
-.user-name {
-  font-size: 14px;
-  color: #303133;
+.jh-btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
 }
 
-.welcome-banner {
-  background: linear-gradient(120deg, #409EFF 0%, #36cfc9 100%);
-  border-radius: 12px;
-  padding: 28px 32px;
-  color: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.25);
-}
-
-.welcome-banner h2 {
-  font-size: 22px;
-  margin-bottom: 8px;
-}
-
-.welcome-banner p {
-  font-size: 14px;
-  opacity: 0.9;
-}
-
-.role-tag {
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-}
-
-.subsystem-title {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.subsystem-title h3 {
-  font-size: 18px;
-  color: #1f2d3d;
-}
-
-.subsystem-title span {
-  font-size: 13px;
-  color: #909399;
-}
-
-.subsystem-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 28px;
-  min-height: 180px;
-}
-
-.subsystem-card {
+/* ====== Hero ====== */
+.jh-hero {
   position: relative;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  background: url('/images/hero-warehouse.jpg') center / cover no-repeat;
+}
+
+.jh-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 58, 138, 0.7);
+}
+
+.jh-hero-content {
+  position: relative;
+  width: 100%;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  text-align: center;
+  color: #fff;
+}
+
+.jh-hero-content h1 {
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.jh-hero-sub {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 56px;
+}
+
+/* ====== 系统入口卡片 ====== */
+.jh-sys-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 400px));
+  justify-content: center;
+  gap: 32px;
+}
+
+.jh-sys-card {
   background: #fff;
   border-radius: 12px;
-  padding: 28px 24px 20px;
-  text-align: center;
-  cursor: pointer;
-  border: 1px solid #ebeef5;
-  transition: all 0.25s ease;
-  overflow: hidden;
+  padding: 36px 28px 32px;
+  color: #111827;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  transition: transform 0.25s, box-shadow 0.25s;
 }
 
-.subsystem-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--card-color);
+.jh-sys-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.25);
 }
 
-.subsystem-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(31, 45, 61, 0.12);
-  border-color: var(--card-color);
-}
-
-.card-icon {
-  width: 72px;
-  height: 72px;
+.jh-sys-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
   border-radius: 50%;
-  margin: 0 auto 16px;
+  background: #dbeafe;
+  color: #1e40af;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--card-color);
-  background: color-mix(in srgb, var(--card-color) 10%, white);
 }
 
-.card-name {
-  font-size: 17px;
-  font-weight: 600;
-  color: #1f2d3d;
-  margin-bottom: 8px;
+.jh-sys-card h3 {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
-.card-desc {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 16px;
-  min-height: 36px;
+.jh-sys-card p {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 22px;
 }
 
-.card-badge {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--card-color);
-  background: color-mix(in srgb, var(--card-color) 10%, white);
-  padding: 2px 8px;
-  border-radius: 10px;
+/* ====== 关于区块 ====== */
+.jh-about {
+  background: #f9fafb;
+  padding: 80px 24px;
+  text-align: center;
 }
 
-.sso-flow-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
+.jh-about h2 {
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 28px;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.jh-about-text {
+  max-width: 780px;
+  margin: 0 auto 56px;
   font-size: 15px;
-  color: #303133;
+  line-height: 2;
+  color: #374151;
+  text-align: justify;
+  text-align-last: center;
 }
 
-.sso-steps {
-  padding: 8px 0 12px;
+.jh-feature-grid {
+  max-width: 1152px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
 }
 
-.user-info-card {
-  margin-top: 4px;
+.jh-feature-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 36px 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s, box-shadow 0.25s;
 }
 
-@media (max-width: 900px) {
-  .subsystem-grid {
+.jh-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.jh-feature-card .jh-sys-icon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+}
+
+.jh-feature-card h4 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.jh-feature-card p {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+/* ====== 页脚 ====== */
+.jh-footer {
+  background: #1e40af;
+  color: #fff;
+}
+
+.jh-footer-inner {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 56px 24px 40px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 40px;
+}
+
+.jh-footer-col h5 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.jh-footer-col p,
+.jh-footer-col a {
+  display: block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 10px;
+  text-decoration: none;
+}
+
+.jh-footer-col a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.jh-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  padding: 20px 24px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.jh-footer-bottom p {
+  margin: 4px 0;
+}
+
+/* ====== 响应式 ====== */
+@media (max-width: 860px) {
+  .jh-hero-content h1 {
+    font-size: 32px;
+  }
+  .jh-sys-cards {
     grid-template-columns: 1fr;
   }
-  .welcome-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .jh-feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .jh-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .jh-nav-links a:not(.jh-btn) {
+    display: none;
   }
 }
 </style>
